@@ -38,6 +38,9 @@ export const API_CONFIG = {
     },
     RELATORIOS: {
       VENDAS: '/api/appadmin/relatorios/vendas',
+    },
+    CONTROLE_ENTRADA: {
+      TOTALIZADORES: '/api/appadmin/controle-entrada',
     }
   }
 };

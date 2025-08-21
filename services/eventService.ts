@@ -254,4 +254,64 @@ export class EventService {
         return '#6B7280'; // Cinza padrão
     }
   }
+
+	/**
+	 * Buscar totalizadores de controle de entrada
+	 */
+	static async getControleEntradaTotalizadores(eventoId: string): Promise<{
+		success: boolean;
+		data?: {
+			total_bilhetes: number;
+			bilhetes_restantes: number;
+			bilhetes_usuados: number;
+		};
+		error?: string;
+	}> {
+		try {
+			const result = await ApiService.request<any>(
+				`${API_CONFIG.ENDPOINTS.CONTROLE_ENTRADA.TOTALIZADORES}/${eventoId}/totalizadores`,
+				{
+					method: 'GET'
+				}
+			);
+
+			if (result.success && result.data) {
+				console.log('🎫 Totalizadores de controle de entrada carregados:', result.data);
+
+				// Verificar se a API retornou erro
+				if (result.data.erro === true) {
+					return {
+						success: false,
+						error: result.data.mensagem || 'Erro ao carregar totalizadores'
+					};
+				}
+
+				// Extrair dados do formato da API LIGA
+				const totalizadores = result.data.dados;
+
+				if (totalizadores) {
+					return {
+						success: true,
+						data: totalizadores
+					};
+				} else {
+					return {
+						success: false,
+						error: 'Dados de totalizadores não encontrados'
+					};
+				}
+			}
+
+			return {
+				success: false,
+				error: 'Resposta inválida da API'
+			};
+		} catch (error) {
+			console.error('Erro ao buscar totalizadores de controle de entrada:', error);
+			return {
+				success: false,
+				error: 'Erro ao carregar totalizadores de controle de entrada'
+			};
+		}
+	}
 } 

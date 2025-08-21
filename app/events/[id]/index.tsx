@@ -14,6 +14,13 @@ export default function EventMenuScreen() {
 	const [evento, setEvento] = useState<Evento | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [entryExpanded, setEntryExpanded] = useState(false);
+	const [entryData, setEntryData] = useState<{
+		total_bilhetes: number;
+		bilhetes_restantes: number;
+		bilhetes_usuados: number;
+	} | null>(null);
+	const [loadingEntry, setLoadingEntry] = useState(false);
+	const [errorEntry, setErrorEntry] = useState<string | null>(null);
 
 	useEffect(() => {
 		if (id) {
@@ -29,6 +36,9 @@ export default function EventMenuScreen() {
 			if (result.success && result.data) {
 				console.log('📅 Detalhes do evento carregados:', result.data);
 				setEvento(result.data);
+				
+				// Carregar dados de controle de entrada
+				loadEntryData();
 			} else {
 				console.error('❌ Erro ao carregar evento:', result.error);
 				Alert.alert('Erro', result.error || 'Não foi possível carregar os detalhes do evento');
@@ -41,6 +51,28 @@ export default function EventMenuScreen() {
 		}
 	}
 
+	async function loadEntryData() {
+		try {
+			setLoadingEntry(true);
+			setErrorEntry(null);
+
+			const result = await EventService.getControleEntradaTotalizadores(id);
+
+			if (result.success && result.data) {
+				console.log('🎫 Dados de controle de entrada carregados:', result.data);
+				setEntryData(result.data);
+			} else {
+				console.error('❌ Erro ao carregar controle de entrada:', result.error);
+				setErrorEntry(result.error || 'Erro ao carregar dados de entrada');
+			}
+		} catch (error) {
+			console.error('Erro ao carregar controle de entrada:', error);
+			setErrorEntry('Erro de conexão. Verifique sua internet.');
+		} finally {
+			setLoadingEntry(false);
+		}
+	}
+
 	function open(path: string) {
 		router.push(`/events/${id}/${path}`);
 	}
@@ -49,36 +81,13 @@ export default function EventMenuScreen() {
 		router.push('/events');
 	}
 
-	// Mock de dados de entrada (será integrado depois)
-	const entryData = {
-		totalCapacity: 5000,
-		currentEntries: 3247,
-		entriesPercentage: 64.9,
-		entriesToday: 1205,
-		lastEntryTime: '14:32',
-		exitCount: 156,
-		peakHour: '13:00-14:00',
-		averageStayTime: '2h 15min',
-		// Dados expandidos adicionais
-		entryMethods: {
-			qrCode: 2547,
-			facial: 489,
-			manual: 211
-		},
-		hourlyData: [
-			{ hour: '10:00', entries: 134 },
-			{ hour: '11:00', entries: 289 },
-			{ hour: '12:00', entries: 456 },
-			{ hour: '13:00', entries: 672 },
-			{ hour: '14:00', entries: 578 },
-			{ hour: '15:00', entries: 234 }
-		],
-		statusSummary: {
-			validated: 3247,
-			pending: 23,
-			blocked: 8
-		}
-	};
+	// Calcular dados derivados para exibição
+	const entryDisplayData = entryData ? {
+		totalCapacity: entryData.total_bilhetes,
+		currentEntries: entryData.bilhetes_usuados,
+		entriesPercentage: Math.round((entryData.bilhetes_usuados / entryData.total_bilhetes) * 100),
+		remainingEntries: entryData.bilhetes_restantes
+	} : null;
 
 	if (loading) {
 		return (
@@ -189,15 +198,18 @@ export default function EventMenuScreen() {
 						style={[styles.entryCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }, styles.shadow]}
 						onPress={() => setEntryExpanded(!entryExpanded)}
 						activeOpacity={0.7}
+						disabled={loadingEntry}
 					>
 						{/* Header sempre visível */}
 						<View style={styles.entryHeader}>
 							<View style={styles.entryHeaderLeft}>
-								<MaterialIcons name="login" size={32} color={colors.primary} />
+								<MaterialIcons name="login" size={32} color={loadingEntry ? colors.cardMuted : colors.primary} />
 								<View style={styles.entryHeaderInfo}>
 									<Text style={[styles.entryTitle, { color: colors.cardText }]}>Controle de Entrada</Text>
 									<Text style={[styles.entrySubtitle, { color: colors.cardMuted }]}>
-										{entryData.currentEntries.toLocaleString('pt-BR')} / {entryData.totalCapacity.toLocaleString('pt-BR')}
+										{loadingEntry ? 'Carregando...' : 
+										 entryDisplayData ? `${entryDisplayData.currentEntries.toLocaleString('pt-BR')} / ${entryDisplayData.totalCapacity.toLocaleString('pt-BR')}` : 
+										 errorEntry ? 'Erro ao carregar' : 'Nenhum dado'}
 									</Text>
 								</View>
 							</View>
@@ -205,6 +217,7 @@ export default function EventMenuScreen() {
 								name={entryExpanded ? "expand-less" : "expand-more"} 
 								size={24} 
 								color={colors.cardMuted} 
+								style={styles.entryArrow}
 							/>
 						</View>
 
@@ -214,7 +227,7 @@ export default function EventMenuScreen() {
 								<View style={styles.entryStats}>
 									<View style={styles.mainStat}>
 										<Text style={[styles.mainStatNumber, { color: colors.primary }]}>
-											{entryData.currentEntries.toLocaleString('pt-BR')}
+											{entryDisplayData ? entryDisplayData.currentEntries.toLocaleString('pt-BR') : '...'}
 										</Text>
 										<Text style={[styles.mainStatLabel, { color: colors.cardMuted }]}>
 											pessoas entraram
@@ -226,85 +239,38 @@ export default function EventMenuScreen() {
 											<View 
 												style={[
 													styles.progressFill, 
-													{ backgroundColor: colors.primary, width: `${entryData.entriesPercentage}%` }
+													{ backgroundColor: colors.primary, width: entryDisplayData ? `${entryDisplayData.entriesPercentage}%` : '0%' }
 												]} 
 											/>
 										</View>
 										<Text style={[styles.progressText, { color: colors.cardMuted }]}>
-											{entryData.entriesPercentage}% da capacidade
+											{entryDisplayData ? `${entryDisplayData.entriesPercentage}%` : '0%'} do total de bilhetes
 										</Text>
 									</View>
 								</View>
 
-								{/* Stats Grid */}
+								{/* Stats Grid - Apenas dados disponíveis */}
 								<View style={styles.statsGrid}>
 									<View style={styles.statGridItem}>
-										<MaterialIcons name="today" size={20} color={colors.primary} />
+										<MaterialIcons name="event-available" size={20} color={colors.primary} />
 										<Text style={[styles.statGridNumber, { color: colors.cardText }]}>
-											{entryData.entriesToday.toLocaleString('pt-BR')}
+											{entryDisplayData ? entryDisplayData.totalCapacity.toLocaleString('pt-BR') : '...'}
 										</Text>
-										<Text style={[styles.statGridLabel, { color: colors.cardMuted }]}>Hoje</Text>
+										<Text style={[styles.statGridLabel, { color: colors.cardMuted }]}>Total</Text>
 									</View>
 									<View style={styles.statGridItem}>
-										<MaterialIcons name="exit-to-app" size={20} color={colors.primary} />
+										<MaterialIcons name="login" size={20} color={colors.primary} />
 										<Text style={[styles.statGridNumber, { color: colors.cardText }]}>
-											{entryData.exitCount}
+											{entryDisplayData ? entryDisplayData.currentEntries.toLocaleString('pt-BR') : '...'}
 										</Text>
-										<Text style={[styles.statGridLabel, { color: colors.cardMuted }]}>Saídas</Text>
+										<Text style={[styles.statGridLabel, { color: colors.cardMuted }]}>Usados</Text>
 									</View>
 									<View style={styles.statGridItem}>
-										<MaterialIcons name="schedule" size={20} color={colors.primary} />
+										<MaterialIcons name="event-available" size={20} color={colors.primary} />
 										<Text style={[styles.statGridNumber, { color: colors.cardText }]}>
-											{entryData.averageStayTime}
+											{entryDisplayData ? entryDisplayData.remainingEntries.toLocaleString('pt-BR') : '...'}
 										</Text>
-										<Text style={[styles.statGridLabel, { color: colors.cardMuted }]}>Tempo médio</Text>
-									</View>
-								</View>
-
-								{/* Métodos de entrada */}
-								<View style={styles.entryMethodsSection}>
-									<Text style={[styles.sectionTitle, { color: colors.cardText }]}>Métodos de Entrada</Text>
-									<View style={styles.methodsGrid}>
-										<View style={styles.methodItem}>
-											<MaterialIcons name="qr-code-2" size={18} color={colors.primary} />
-											<Text style={[styles.methodLabel, { color: colors.cardMuted }]}>QR Code</Text>
-											<Text style={[styles.methodValue, { color: colors.cardText }]}>
-												{entryData.entryMethods.qrCode.toLocaleString('pt-BR')}
-											</Text>
-										</View>
-										<View style={styles.methodItem}>
-											<MaterialIcons name="face-retouching-natural" size={18} color={colors.primary} />
-											<Text style={[styles.methodLabel, { color: colors.cardMuted }]}>Facial</Text>
-											<Text style={[styles.methodValue, { color: colors.cardText }]}>
-												{entryData.entryMethods.facial.toLocaleString('pt-BR')}
-											</Text>
-										</View>
-										<View style={styles.methodItem}>
-											<MaterialIcons name="edit" size={18} color={colors.primary} />
-											<Text style={[styles.methodLabel, { color: colors.cardMuted }]}>Manual</Text>
-											<Text style={[styles.methodValue, { color: colors.cardText }]}>
-												{entryData.entryMethods.manual.toLocaleString('pt-BR')}
-											</Text>
-										</View>
-									</View>
-								</View>
-
-								{/* Status Summary */}
-								<View style={styles.statusSection}>
-									<Text style={[styles.sectionTitle, { color: colors.cardText }]}>Status dos Ingressos</Text>
-									<View style={styles.statusGrid}>
-										<View style={[styles.statusItem, { backgroundColor: '#10B981' }]}>
-											<Text style={styles.statusNumber}>{entryData.statusSummary.validated}</Text>
-											<Text style={styles.statusLabel}>Validados</Text>
-										</View>
-										<View style={[styles.statusItem, { backgroundColor: '#F59E0B' }]}>
-											<Text style={styles.statusNumber}>{entryData.statusSummary.pending}</Text>
-											<Text style={styles.statusLabel}>Pendentes</Text>
-										</View>
-										<View style={[styles.statusItem, { backgroundColor: '#EF4444' }]}>
-											<Text style={styles.statusNumber}>{entryData.statusSummary.blocked}</Text>
-											<Text style={styles.statusLabel}>Bloqueados</Text>
-										</View>
+										<Text style={[styles.statGridLabel, { color: colors.cardMuted }]}>Restantes</Text>
 									</View>
 								</View>
 							</>
@@ -422,7 +388,8 @@ const styles = StyleSheet.create({
 		flexDirection: 'row',
 		alignItems: 'center',
 		justifyContent: 'space-between',
-		marginBottom: 16
+		marginBottom: 16,
+		width: '100%' // Garantir que ocupe toda a largura
 	},
 	entryHeaderLeft: {
 		flexDirection: 'row',
@@ -431,6 +398,10 @@ const styles = StyleSheet.create({
 	},
 	entryHeaderInfo: {
 		flex: 1
+	},
+	entryArrow: {
+		marginLeft: 16, // Espaçamento à esquerda da seta
+		marginRight: 8, // Espaçamento à direita da seta
 	},
 	entryTitle: {
 		fontSize: 18,

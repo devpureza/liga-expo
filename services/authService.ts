@@ -52,11 +52,18 @@ export class AuthService {
    */
   static async logout(): Promise<void> {
     try {
-      // Remover token do storage
-      await ApiService.removeAuthToken();
-      console.log('Logout realizado com sucesso');
+      // Chamar API de logout e limpar dados locais
+      const result = await ApiService.logout();
+      
+      if (result.success) {
+        console.log('✅ Logout realizado com sucesso');
+      } else {
+        console.log('⚠️ Logout realizado com aviso:', result.error);
+      }
     } catch (error) {
-      console.error('Erro no logout:', error);
+      console.error('❌ Erro no logout:', error);
+      // Mesmo com erro, garantir que dados locais sejam limpos
+      await ApiService.removeAuthToken();
     }
   }
 

@@ -7,6 +7,7 @@ export const API_CONFIG = {
   ENDPOINTS: {
     AUTH: {
       LOGIN: '/api/appadmin/auth/login',
+      LOGOUT: '/api/appadmin/auth/logout',
     },
     USUARIOS: {
       BUSCAR: '/api/appadmin/usuarios',
@@ -174,5 +175,35 @@ export class ApiService {
   static async isAuthenticated(): Promise<boolean> {
     const token = await this.getAuthToken();
     return !!token;
+  }
+
+  // Fazer logout
+  static async logout(): Promise<{ success: boolean; error?: string }> {
+    try {
+      // Chamar API de logout
+      const result = await this.request(
+        API_CONFIG.ENDPOINTS.AUTH.LOGOUT,
+        {
+          method: 'POST',
+          includeAuth: true
+        }
+      );
+
+      // Sempre limpar dados locais, independente da resposta da API
+      await this.removeAuthToken();
+
+      if (result.success) {
+        console.log('✅ Logout realizado com sucesso');
+        return { success: true };
+      } else {
+        console.log('⚠️ Erro na API de logout, mas dados locais foram limpos');
+        return { success: true }; // Consideramos sucesso mesmo com erro da API
+      }
+    } catch (error) {
+      console.error('❌ Erro ao fazer logout:', error);
+      // Mesmo com erro, limpar dados locais
+      await this.removeAuthToken();
+      return { success: true };
+    }
   }
 } 

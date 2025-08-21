@@ -1,6 +1,6 @@
 import React from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { StyleSheet, Text, TouchableOpacity, View, Image, Alert, ActivityIndicator } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View, Image, Alert, ActivityIndicator, ScrollView } from 'react-native';
 import { router } from 'expo-router';
 import { useTheme } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -107,7 +107,7 @@ export default function ProfileScreen() {
 					</TouchableOpacity>
 				</View>
 
-				<View style={styles.content}>
+				<ScrollView contentContainerStyle={styles.content}>
 					{/* Foto do perfil */}
 					<View style={styles.profileSection}>
 						<View style={[styles.photoContainer, { borderColor: colors.cardBorder }]}>
@@ -194,10 +194,11 @@ export default function ProfileScreen() {
 						onPress={handleLogout} 
 						loading={loading}
 						style={styles.logoutButton}
+						variant="solid"
 					>
 						{loading ? 'Saindo...' : 'Sair'}
 					</PrimaryButton>
-				</View>
+				</ScrollView>
 			</SafeAreaView>
 			<TabBar />
 		</View>
@@ -229,9 +230,10 @@ const styles = StyleSheet.create({
 		justifyContent: 'center'
 	},
 	content: {
-		flex: 1,
+		flexGrow: 1,
 		alignItems: 'center',
-		gap: 32
+		gap: 32,
+		paddingBottom: 32 // Espaço extra no final para o botão de logout
 	},
 	loadingContainer: {
 		flex: 1,
@@ -324,7 +326,14 @@ const styles = StyleSheet.create({
 	logoutButton: {
 		width: '100%',
 		paddingVertical: 16,
-		backgroundColor: '#EF4444'
+		backgroundColor: '#EF4444',
+		borderRadius: 12,
+		borderWidth: 0,
+		shadowColor: '#000',
+		shadowOpacity: 0.1,
+		shadowRadius: 4,
+		shadowOffset: { width: 0, height: 2 },
+		elevation: 3
 	},
 	groupsContainer: {
 		flexDirection: 'row',

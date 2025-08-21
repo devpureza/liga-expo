@@ -21,8 +21,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#0B0D17",
-        "versionCode": 2
+        "backgroundColor": "#0B0D17"
       },
       "package": "com.liga.admin",
       "versionCode": 1,

@@ -1,16 +1,101 @@
+import React, { useState, useEffect } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { StyleSheet, Text, TouchableOpacity, View, Image } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View, Image, ScrollView, TextInput, FlatList, ActivityIndicator, Alert } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useTheme } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
 import TabBar from '../../../components/TabBar';
+import { CouponService } from '../../../services/couponService';
+import { useEventDetails } from '../../../hooks/useEventDetails';
+import { Cupom } from '../../../types/api';
 
 export default function CuponsScreen() {
 	const { id } = useLocalSearchParams<{ id: string }>();
 	const { colors } = useTheme() as any;
+	const { evento, loading: eventLoading, error: eventError } = useEventDetails(id || '');
+	const [searchText, setSearchText] = useState('');
+	const [filterStatus, setFilterStatus] = useState<'todos' | 'ativos' | 'expirados'>('todos');
+	const [cupons, setCupons] = useState<Cupom[]>([]);
+	const [loading, setLoading] = useState(true);
+	const [refreshing, setRefreshing] = useState(false);
+
+	useEffect(() => {
+		loadCoupons();
+	}, [id]);
+
+	async function loadCoupons() {
+		try {
+			setLoading(true);
+			const result = await CouponService.getCouponsByEvent(id);
+
+			if (result.success && result.data) {
+				console.log('🎫 Cupons do evento carregados:', result.data);
+				setCupons(result.data);
+			} else {
+				console.error('❌ Erro ao carregar cupons:', result.error);
+				Alert.alert('Erro', result.error || 'Não foi possível carregar os cupons');
+			}
+		} catch (error) {
+			console.error('Erro ao carregar cupons:', error);
+			Alert.alert('Erro', 'Erro de conexão. Verifique sua internet.');
+		} finally {
+			setLoading(false);
+		}
+	}
+
+	async function onRefresh() {
+		setRefreshing(true);
+		await loadCoupons();
+		setRefreshing(false);
+	}
 
 	function goBack() {
-		router.push('/events');
+		router.back();
+	}
+
+	// Renderizar loading enquanto carrega os dados do evento
+	if (eventLoading) {
+		return (
+			<View style={{ flex: 1 }}>
+				<SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+					<View style={styles.header}>
+						<TouchableOpacity onPress={goBack} style={styles.backButton}>
+							<MaterialIcons name="arrow-back" size={24} color={colors.text} />
+						</TouchableOpacity>
+						<Image source={require('../../../assets/logo/Colorida-Offwhite.png')} style={styles.logo} resizeMode="contain" />
+						<View style={styles.placeholder} />
+					</View>
+					<View style={styles.loadingContainer}>
+						<ActivityIndicator size="large" color={colors.primary} />
+						<Text style={[styles.loadingText, { color: colors.mutedText }]}>Carregando dados do evento...</Text>
+					</View>
+				</SafeAreaView>
+				<TabBar />
+			</View>
+		);
+	}
+
+	// Renderizar erro se houver
+	if (eventError) {
+		return (
+			<View style={{ flex: 1 }}>
+				<SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+					<View style={styles.header}>
+						<TouchableOpacity onPress={goBack} style={styles.backButton}>
+							<MaterialIcons name="arrow-back" size={24} color={colors.text} />
+						</TouchableOpacity>
+						<Image source={require('../../../assets/logo/Colorida-Offwhite.png')} style={styles.logo} resizeMode="contain" />
+						<View style={styles.placeholder} />
+					</View>
+					<View style={styles.errorContainer}>
+						<MaterialIcons name="error-outline" size={64} color={colors.mutedText} />
+						<Text style={[styles.errorTitle, { color: colors.text }]}>Erro ao carregar evento</Text>
+						<Text style={[styles.errorText, { color: colors.mutedText }]}>{eventError}</Text>
+					</View>
+				</SafeAreaView>
+				<TabBar />
+			</View>
+		);
 	}
 
 	return (
@@ -25,7 +110,17 @@ export default function CuponsScreen() {
 					<View style={styles.placeholder} />
 				</View>
 
-				<Text style={[styles.title, { color: colors.text }]}>Cupons - Evento #{id}</Text>
+				{/* Título com nome do evento */}
+				<Text style={[styles.title, { color: colors.text }]}>
+					Cupons - {evento?.nome || `Evento #${id}`}
+				</Text>
+
+				{/* Subtítulo com data do evento se disponível */}
+				{evento?.data_evento && (
+					<Text style={[styles.subtitle, { color: colors.mutedText }]}>
+						{new Date(evento.data_evento).toLocaleDateString('pt-BR')}
+					</Text>
+				)}
 
 				<View style={styles.content}>
 					<View style={[styles.infoCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }, styles.shadow]}>
@@ -106,6 +201,10 @@ const styles = StyleSheet.create({
 	title: {
 		fontSize: 22,
 		fontWeight: '700',
+		marginBottom: 16
+	},
+	subtitle: {
+		fontSize: 14,
 		marginBottom: 24
 	},
 	content: {
@@ -186,5 +285,31 @@ const styles = StyleSheet.create({
 		shadowRadius: 8,
 		shadowOffset: { width: 0, height: 4 },
 		elevation: 3
+	},
+	loadingContainer: {
+		flex: 1,
+		justifyContent: 'center',
+		alignItems: 'center',
+		padding: 20
+	},
+	loadingText: {
+		marginTop: 10,
+		fontSize: 16
+	},
+	errorContainer: {
+		flex: 1,
+		justifyContent: 'center',
+		alignItems: 'center',
+		padding: 20
+	},
+	errorTitle: {
+		fontSize: 18,
+		fontWeight: '700',
+		marginTop: 10
+	},
+	errorText: {
+		fontSize: 14,
+		textAlign: 'center',
+		marginTop: 5
 	}
 }); 

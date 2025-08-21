@@ -34,6 +34,9 @@ export const API_CONFIG = {
     VALIDACAO: {
       QR_CODE: '/api/appadmin/qrcode/ler',
       FACIAL: '/api/appadmin/validacao/facial',
+    },
+    RELATORIOS: {
+      VENDAS: '/api/appadmin/relatorios/vendas',
     }
   }
 };

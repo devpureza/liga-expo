@@ -320,20 +320,7 @@ export default function EventMenuScreen() {
 							</View>
 							<MaterialIcons name="chevron-right" size={22} color={colors.cardMuted} />
 						</TouchableOpacity>
-						<TouchableOpacity style={[styles.card, { backgroundColor: colors.card, borderColor: colors.cardBorder }, styles.shadow]} onPress={() => open('editar')}>
-							<View style={styles.left}>
-								<MaterialIcons name="edit" size={22} color={colors.cardText} />
-								<Text style={[styles.cardTitle, { color: colors.cardText }]}>Editar</Text>
-							</View>
-							<MaterialIcons name="chevron-right" size={22} color={colors.cardMuted} />
-						</TouchableOpacity>
-						<TouchableOpacity style={[styles.card, { backgroundColor: colors.card, borderColor: colors.cardBorder }, styles.shadow]} onPress={() => open('ingressos')}>
-							<View style={styles.left}>
-								<MaterialIcons name="confirmation-number" size={22} color={colors.cardText} />
-								<Text style={[styles.cardTitle, { color: colors.cardText }]}>Ingressos</Text>
-							</View>
-							<MaterialIcons name="chevron-right" size={22} color={colors.cardMuted} />
-						</TouchableOpacity>
+
 					</View>
 				</ScrollView>
 			</SafeAreaView>

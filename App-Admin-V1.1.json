@@ -1,0 +1,681 @@
+{
+    "info": {
+        "_postman_id": "liga-app-admin-v1-1",
+        "name": "App-Admin-V1.1",
+        "description": "Collection atualizada para o App Admin do LIGA com todas as correções implementadas",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+        "_exporter_id": "liga-app-admin-v1-1"
+    },
+    "item": [
+        {
+            "name": "🔐 Autenticação",
+            "item": [
+                {
+                    "name": "Login",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"user\": \"{{email_usuario}}\",\n    \"password\": \"{{senha_usuario}}\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/appadmin/auth/login",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "appadmin",
+                                "auth",
+                                "login"
+                            ]
+                        },
+                        "description": "Realiza login do usuário administrador. Retorna o token de autenticação necessário para as outras rotas."
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "📅 Eventos",
+            "item": [
+                {
+                    "name": "Listar Eventos Ativos",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{auth_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/appadmin/eventos/ativos",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "appadmin",
+                                "eventos",
+                                "ativos"
+                            ]
+                        },
+                        "description": "Lista todos os eventos ativos ordenados por data. Retorna: id, nome, data_evento, status, nome_local, cidade, estado"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Visualizar Evento",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{auth_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/appadmin/eventos/{{evento_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "appadmin",
+                                "eventos",
+                                "{{evento_id}}"
+                            ]
+                        },
+                        "description": "Visualiza detalhes de um evento específico"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Editar Evento",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{auth_token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"nome\": \"Nome Atualizado do Evento\",\n    \"descricao\": \"Nova descrição\",\n    \"data_evento\": \"2025-09-15 20:00:00\",\n    \"nome_local\": \"Novo Local\",\n    \"cidade\": \"Nova Cidade\",\n    \"estado\": \"Novo Estado\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/appadmin/eventos/{{evento_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "appadmin",
+                                "eventos",
+                                "{{evento_id}}"
+                            ]
+                        },
+                        "description": "Edita um evento específico. Campos disponíveis: nome, descricao, data_evento, nome_local, cidade, estado"
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "🎫 Ingressos",
+            "item": [
+                {
+                    "name": "Listar Ingressos do Evento",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{auth_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/appadmin/eventos/{{evento_id}}/ingressos",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "appadmin",
+                                "eventos",
+                                "{{evento_id}}",
+                                "ingressos"
+                            ]
+                        },
+                        "description": "Lista todos os ingressos de um evento específico. Retorna: id, nome, valor, quantidade_disponivel, permitir_compra"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Editar Ingresso",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{auth_token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"nome\": \"Nome Atualizado do Ingresso\",\n    \"valor\": 75.50,\n    \"quantidade_disponivel\": 150,\n    \"permitir_compra\": 1\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/appadmin/ingressos/{{ingresso_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "appadmin",
+                                "ingressos",
+                                "{{ingresso_id}}"
+                            ]
+                        },
+                        "description": "Edita um ingresso específico. Campos disponíveis: nome, valor, quantidade_disponivel, permitir_compra"
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "📦 Lotes",
+            "item": [
+                {
+                    "name": "Listar Lotes do Evento",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{auth_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/appadmin/eventos/{{evento_id}}/lotes",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "appadmin",
+                                "eventos",
+                                "{{evento_id}}",
+                                "lotes"
+                            ]
+                        },
+                        "description": "Lista todos os lotes de um evento específico. Retorna: id, nome, valor, quantidade_disponivel, status, inicio_venda, termino_venda"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Editar Lote",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{auth_token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"nome\": \"Nome Atualizado do Lote\",\n    \"valor\": 85.00,\n    \"quantidade_disponivel\": 200,\n    \"status\": \"ativo\",\n    \"inicio_venda\": \"2025-08-25 00:00:00\",\n    \"termino_venda\": \"2025-09-10 23:59:59\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/appadmin/lotes/{{lote_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "appadmin",
+                                "lotes",
+                                "{{lote_id}}"
+                            ]
+                        },
+                        "description": "Edita um lote específico. Campos disponíveis: nome, valor, quantidade_disponivel, status, inicio_venda, termino_venda"
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "📊 Relatórios",
+            "item": [
+                {
+                    "name": "Relatório de Vendas",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{auth_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/appadmin/relatorios/vendas?data_inicio={{data_inicio}}&data_fim={{data_fim}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "appadmin",
+                                "relatorios",
+                                "vendas"
+                            ],
+                            "query": [
+                                {
+                                    "key": "data_inicio",
+                                    "value": "{{data_inicio}}",
+                                    "description": "Data de início (formato: YYYY-MM-DD)"
+                                },
+                                {
+                                    "key": "data_fim",
+                                    "value": "{{data_fim}}",
+                                    "description": "Data de fim (formato: YYYY-MM-DD)"
+                                }
+                            ]
+                        },
+                        "description": "Gera relatório de vendas por período. Retorna total de vendas, receita total e vendas por evento"
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "🏪 Pontos de Venda",
+            "item": [
+                {
+                    "name": "Listar Pontos de Venda",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{auth_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/appadmin/pontos-venda",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "appadmin",
+                                "pontos-venda"
+                            ]
+                        },
+                        "description": "Lista todos os pontos de venda. Retorna: id, nome, cidade, estado, descricao"
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "🎫 Cupons",
+            "item": [
+                {
+                    "name": "Listar Cupons",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{auth_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/appadmin/cupons",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "appadmin",
+                                "cupons"
+                            ]
+                        },
+                        "description": "Lista todos os cupons de desconto. Retorna: id, codigo, valor, tipo_desconto, status, data_expiracao, limite_uso_por_cupom, evento_id, evento_nome"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Cadastrar Cupom",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{auth_token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"evento_id\": \"{{evento_id}}\",\n    \"codigo\": \"DESCONTO20\",\n    \"valor\": 20.00,\n    \"tipo_desconto\": \"percentual\",\n    \"data_expiracao\": \"2025-12-31\",\n    \"limite_uso_por_cupom\": 100,\n    \"descricao\": \"Desconto de 20% para o evento\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/appadmin/cupons",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "appadmin",
+                                "cupons"
+                            ]
+                        },
+                        "description": "Cadastra um novo cupom de desconto. Campos obrigatórios: evento_id, codigo, valor, tipo_desconto, data_expiracao, descricao"
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "🎁 Cortesias",
+            "item": [
+                {
+                    "name": "Listar Cortesias",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{auth_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/appadmin/cortesias",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "appadmin",
+                                "cortesias"
+                            ]
+                        },
+                        "description": "Lista todas as cortesias. Retorna: id, evento, ingresso, lote, usuario, data_criacao"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Disparar Cortesia",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{auth_token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"cortesia_id\": \"{{cortesia_id}}\",\n    \"quantidade\": 5,\n    \"destinatarios\": [\"email1@exemplo.com\", \"email2@exemplo.com\"]\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/appadmin/cortesias/disparar",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "appadmin",
+                                "cortesias",
+                                "disparar"
+                            ]
+                        },
+                        "description": "Dispara uma cortesia para os destinatários especificados"
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "👥 Usuários",
+            "item": [
+                {
+                    "name": "Buscar Usuários",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{auth_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/appadmin/usuarios?nome={{nome}}&email={{email}}&cpf={{cpf}}&limit={{limit}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "appadmin",
+                                "usuarios"
+                            ],
+                            "query": [
+                                {
+                                    "key": "nome",
+                                    "value": "{{nome}}",
+                                    "description": "Nome do usuário para busca (opcional)"
+                                },
+                                {
+                                    "key": "email",
+                                    "value": "{{email}}",
+                                    "description": "Email do usuário para busca (opcional)"
+                                },
+                                {
+                                    "key": "cpf",
+                                    "value": "{{cpf}}",
+                                    "description": "CPF do usuário para busca (opcional)"
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "{{limit}}",
+                                    "description": "Limite de resultados (padrão: 20)"
+                                }
+                            ]
+                        },
+                        "description": "Busca usuários cadastrados. Filtros disponíveis: nome, email, cpf. Retorna: id, name, email, cpf, path_avatar_aprovado (URL completa), created_at, status_aprovacao"
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "🔍 Validação",
+            "item": [
+                {
+                    "name": "Ler QR Code",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{auth_token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"qr_code\": \"{{qr_code_content}}\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/appadmin/qrcode/ler",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "appadmin",
+                                "qrcode",
+                                "ler"
+                            ]
+                        },
+                        "description": "Lê e processa um QR Code. Retorna status e informações do ingresso"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Validar Facial Admin",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{auth_token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"imagem_base64\": \"{{imagem_base64}}\",\n    \"usuario_id\": \"{{usuario_id}}\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/appadmin/validacao/facial",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "appadmin",
+                                "validacao",
+                                "facial"
+                            ]
+                        },
+                        "description": "Validação facial para administradores. Retorna se o usuário foi validado"
+                    },
+                    "response": []
+                }
+            ]
+        }
+    ],
+    "variable": [
+        {
+            "key": "base_url",
+            "value": "http://localhost",
+            "type": "string"
+        },
+        {
+            "key": "auth_token",
+            "value": "seu_token_aqui",
+            "type": "string"
+        },
+        {
+            "key": "evento_id",
+            "value": "uuid_do_evento",
+            "type": "string"
+        },
+        {
+            "key": "ingresso_id",
+            "value": "uuid_do_ingresso",
+            "type": "string"
+        },
+        {
+            "key": "lote_id",
+            "value": "uuid_do_lote",
+            "type": "string"
+        },
+        {
+            "key": "cortesia_id",
+            "value": "uuid_da_cortesia",
+            "type": "string"
+        },
+        {
+            "key": "email_usuario",
+            "value": "seu_email@exemplo.com",
+            "type": "string"
+        },
+        {
+            "key": "senha_usuario",
+            "value": "sua_senha",
+            "type": "string"
+        },
+        {
+            "key": "nome",
+            "value": "João",
+            "type": "string"
+        },
+        {
+            "key": "email",
+            "value": "joao@exemplo.com",
+            "type": "string"
+        },
+        {
+            "key": "cpf",
+            "value": "12345678900",
+            "type": "string"
+        },
+        {
+            "key": "limit",
+            "value": "20",
+            "type": "string"
+        },
+        {
+            "key": "data_inicio",
+            "value": "2025-08-01",
+            "type": "string"
+        },
+        {
+            "key": "data_fim",
+            "value": "2025-08-31",
+            "type": "string"
+        },
+        {
+            "key": "qr_code_content",
+            "value": "conteudo_do_qr_code",
+            "type": "string"
+        },
+        {
+            "key": "imagem_base64",
+            "value": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQ...",
+            "type": "string"
+        },
+        {
+            "key": "usuario_id",
+            "value": "uuid_do_usuario",
+            "type": "string"
+        }
+    ]
+}

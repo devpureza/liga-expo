@@ -2,7 +2,7 @@
   "expo": {
     "name": "LIGA Admin",
     "slug": "liga-admin",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -21,11 +21,15 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#0B0D17"
+        "backgroundColor": "#0B0D17",
+        "versionCode": 2
       },
       "package": "com.liga.admin",
       "versionCode": 1,
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "permissions": [
+        "android.permission.CAMERA"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -33,6 +37,12 @@
     "plugins": [
       "expo-router",
       "expo-barcode-scanner"
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "ac7ea805-eab2-4887-a282-10dacce305b5"
+      }
+    }
   }
 }

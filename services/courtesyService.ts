@@ -141,6 +141,48 @@ export class CourtesyService {
   }
 
   /**
+   * Disparar cortesia
+   */
+	static async dispararCortesia(cortesiaData: DispararCortesiaRequest): Promise<{
+		success: boolean;
+		data?: any;
+		error?: string;
+	}> {
+		try {
+			console.log('🎫 Tentando disparar cortesia:', cortesiaData);
+			
+			const result = await ApiService.request<any>(
+				API_CONFIG.ENDPOINTS.CORTESIAS.DISPARAR,
+				{
+					method: 'POST',
+					body: cortesiaData
+				}
+			);
+
+			console.log('🎫 Resposta da API:', result);
+
+			if (result.success && result.data) {
+				console.log('✅ Cortesia disparada com sucesso:', result.data);
+				return {
+					success: true,
+					data: result.data
+				};
+			}
+
+			return {
+				success: false,
+				error: result.error || 'Erro ao disparar cortesia'
+			};
+		} catch (error) {
+			console.error('❌ Erro ao disparar cortesia:', error);
+			return {
+				success: false,
+				error: 'Erro de conexão. Verifique sua internet.'
+			};
+		}
+	}
+
+  /**
    * Formatar data de criação da cortesia
    */
   static formatCreationDate(dateString: string): string {

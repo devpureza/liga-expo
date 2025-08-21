@@ -141,31 +141,32 @@ export interface EditarLoteRequest {
 
 // Tipos de Cupom
 export interface Cupom {
-  id: string;
-  codigo: string;
-  valor: number | string; // API pode retornar como string
-  tipo_desconto: 'percentual' | 'fixo';
-  status: string | number; // API pode retornar 0/1 ou string
-  data_expiracao: string;
-  limite_uso_por_cupom: number;
-  evento_id: string;
-  evento_nome: string;
-  // Campos extras que a API pode retornar
-  descricao?: string;
-  usos?: number; // Quantidade de vezes que foi usado
-  ativo?: boolean;
-  created_at?: string;
-  updated_at?: string;
+	id: string;
+	evento_id: string;
+	codigo: string;
+	valor: number;
+	tipo_desconto: 'fixo' | 'percentual';
+	data_expiracao: string;
+	descricao: string;
+	limite_uso_por_cupom: number;
+	limite_uso_por_cliente: number;
+	gasto_minimo: number;
+	gasto_maximo: number;
+	created_at?: string;
+	updated_at?: string;
 }
 
 export interface CriarCupomRequest {
-  evento_id: string;
-  codigo: string;
-  valor: number;
-  tipo_desconto: 'percentual' | 'fixo';
-  data_expiracao: string;
-  limite_uso_por_cupom: number;
-  descricao: string;
+	evento_id: string;
+	codigo: string;
+	valor: number;
+	tipo_desconto: 'fixo' | 'percentual';
+	data_expiracao: string;
+	descricao: string;
+	limite_uso_por_cupom: number;
+	limite_uso_por_cliente: number;
+	gasto_minimo?: number;
+	gasto_maximo?: number;
 }
 
 // Tipos de Cortesia
@@ -192,9 +193,13 @@ export interface Cortesia {
 }
 
 export interface DispararCortesiaRequest {
-  cortesia_id: string;
-  quantidade: number;
-  destinatarios: string[];
+	evento: string;
+	ingresso: string;
+	lote_id: string;
+	quantidade: number;
+	restricao_cpf?: string;
+	pode_transferir: boolean;
+	observacao?: string;
 }
 
 // Tipos de Validação

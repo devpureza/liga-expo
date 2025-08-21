@@ -26,7 +26,7 @@ export const API_CONFIG = {
     },
     CUPONS: {
       LISTAR: '/api/appadmin/cupons',
-      CRIAR: '/api/appadmin/cupons',
+      CRIAR: '/api/appadmin/cupons/cadastrar',
     },
     CORTESIAS: {
       LISTAR: '/api/appadmin/cortesias',
@@ -97,6 +97,25 @@ export class ApiService {
         headers,
         body: body ? JSON.stringify(body) : undefined,
       });
+
+      // Verificar se a resposta é JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        console.error('❌ API retornou resposta não-JSON:', {
+          status: response.status,
+          contentType,
+          url
+        });
+        
+        // Se não for JSON, tentar ler como texto para debug
+        const textResponse = await response.text();
+        console.error('❌ Conteúdo da resposta:', textResponse.substring(0, 200));
+        
+        return {
+          success: false,
+          error: `API retornou resposta inválida (${response.status}). Verifique se o endpoint está correto.`
+        };
+      }
 
       const responseData = await response.json();
 

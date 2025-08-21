@@ -314,4 +314,118 @@ export class EventService {
 			};
 		}
 	}
+
+	/**
+	 * Buscar ingressos de um evento
+	 */
+	static async getEventTickets(eventId: string): Promise<{
+		success: boolean;
+		data?: any[];
+		error?: string;
+	}> {
+		try {
+			const result = await ApiService.request<any>(
+				`${API_CONFIG.ENDPOINTS.EVENTOS.DETALHES}/${eventId}/ingressos`,
+				{
+					method: 'GET'
+				}
+			);
+
+			if (result.success && result.data) {
+				console.log('🎫 Ingressos do evento carregados:', result.data);
+				
+				// Verificar se a API retornou erro
+				if (result.data.erro === true) {
+					return {
+						success: false,
+						error: result.data.mensagem || 'Erro ao carregar ingressos'
+					};
+				}
+
+				// Extrair ingressos do formato da API
+				let ingressos: any[] = [];
+				
+				if (result.data.dados) {
+					ingressos = Array.isArray(result.data.dados) ? result.data.dados : [];
+				} else if (result.data.ingressos) {
+					ingressos = result.data.ingressos;
+				} else if (Array.isArray(result.data)) {
+					ingressos = result.data;
+				}
+
+				return {
+					success: true,
+					data: ingressos
+				};
+			}
+
+			return {
+				success: false,
+				error: 'Resposta inválida da API'
+			};
+		} catch (error) {
+			console.error('Erro ao buscar ingressos do evento:', error);
+			return {
+				success: false,
+				error: 'Erro ao carregar ingressos do evento'
+			};
+		}
+	}
+
+	/**
+	 * Buscar lotes de um evento
+	 */
+	static async getEventLotes(eventId: string): Promise<{
+		success: boolean;
+		data?: any[];
+		error?: string;
+	}> {
+		try {
+			const result = await ApiService.request<any>(
+				`${API_CONFIG.ENDPOINTS.EVENTOS.DETALHES}/${eventId}/lotes`,
+				{
+					method: 'GET'
+				}
+			);
+
+			if (result.success && result.data) {
+				console.log('🎫 Lotes do evento carregados:', result.data);
+				
+				// Verificar se a API retornou erro
+				if (result.data.erro === true) {
+					return {
+						success: false,
+						error: result.data.mensagem || 'Erro ao carregar lotes'
+					};
+				}
+
+				// Extrair lotes do formato da API
+				let lotes: any[] = [];
+				
+				if (result.data.dados) {
+					lotes = Array.isArray(result.data.dados) ? result.data.dados : [];
+				} else if (result.data.lotes) {
+					lotes = result.data.lotes;
+				} else if (Array.isArray(result.data)) {
+					lotes = result.data;
+				}
+
+				return {
+					success: true,
+					data: lotes
+				};
+			}
+
+			return {
+				success: false,
+				error: 'Resposta inválida da API'
+			};
+		} catch (error) {
+			console.error('Erro ao buscar lotes do evento:', error);
+			return {
+				success: false,
+				error: 'Erro ao carregar lotes do evento'
+			};
+		}
+	}
 } 

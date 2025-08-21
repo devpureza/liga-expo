@@ -1,59 +1,160 @@
+import React, { useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { StyleSheet, Text, TouchableOpacity, View, Image, ScrollView, TextInput, Alert } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View, Image, ScrollView, TextInput, Alert, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useTheme } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useState } from 'react';
-import PrimaryButton from '../../../components/PrimaryButton';
 import TabBar from '../../../components/TabBar';
+import PrimaryButton from '../../../components/PrimaryButton';
+import { CouponService } from '../../../services/couponService';
+import { CriarCupomRequest } from '../../../types/api';
 
 export default function CriarCupomScreen() {
-	const { id } = useLocalSearchParams<{ id: string }>();
+	const { id: eventoId } = useLocalSearchParams<{ id: string }>();
 	const { colors } = useTheme() as any;
+	const [loading, setLoading] = useState(false);
 
-	const [formData, setFormData] = useState({
-		nome: '',
+	// Estados do formulário
+	const [formData, setFormData] = useState<CriarCupomRequest>({
+		evento_id: eventoId || '',
 		codigo: '',
-		tipo: 'percentual', // percentual ou fixo
-		valor: '',
-		limiteUso: '',
-		dataValidade: '',
-		ativo: true
+		valor: 0,
+		tipo_desconto: 'fixo',
+		data_expiracao: '',
+		descricao: '',
+		limite_uso_por_cupom: 1,
+		limite_uso_por_cliente: 1
 	});
 
 	function goBack() {
 		router.back();
 	}
 
-	function generateCode() {
-		const code = 'LIGA' + Math.random().toString(36).substring(2, 8).toUpperCase();
-		setFormData(prev => ({ ...prev, codigo: code }));
+	function updateForm(field: keyof CriarCupomRequest, value: any) {
+		setFormData(prev => ({
+			...prev,
+			[field]: value
+		}));
 	}
 
-	function handleSave() {
-		if (!formData.nome || !formData.codigo || !formData.valor) {
-			Alert.alert('Erro', 'Preencha todos os campos obrigatórios');
+	function formatDateInput(text: string) {
+		// Remove tudo que não é número
+		const numbers = text.replace(/\D/g, '');
+		
+		// Aplica máscara DD/MM/AAAA
+		if (numbers.length <= 2) {
+			return numbers;
+		} else if (numbers.length <= 4) {
+			return `${numbers.slice(0, 2)}/${numbers.slice(2)}`;
+		} else {
+			return `${numbers.slice(0, 2)}/${numbers.slice(2, 4)}/${numbers.slice(4, 8)}`;
+		}
+	}
+
+	function convertBRToAPI(brDate: string): string {
+		// Converte DD/MM/AAAA para YYYY-MM-DD
+		const parts = brDate.split('/');
+		if (parts.length === 3) {
+			return `${parts[2]}-${parts[1]}-${parts[0]}`;
+		}
+		return brDate;
+	}
+
+	function convertAPIToBR(apiDate: string): string {
+		// Converte YYYY-MM-DD para DD/MM/AAAA
+		const parts = apiDate.split('-');
+		if (parts.length === 3) {
+			return `${parts[2]}/${parts[1]}/${parts[0]}`;
+		}
+		return apiDate;
+	}
+
+	function validateDate(brDateString: string): boolean {
+		// Converte para formato da API para validação
+		const apiDate = convertBRToAPI(brDateString);
+		
+		// Verifica formato DD/MM/AAAA
+		const brDateRegex = /^\d{2}\/\d{2}\/\d{4}$/;
+		if (!brDateRegex.test(brDateString)) {
+			return false;
+		}
+
+		// Verifica se é uma data válida
+		const date = new Date(apiDate);
+		if (isNaN(date.getTime())) {
+			return false;
+		}
+
+		// Verifica se não é uma data passada
+		const today = new Date();
+		today.setHours(0, 0, 0, 0);
+		if (date < today) {
+			return false;
+		}
+
+		return true;
+	}
+
+	async function handleSubmit() {
+		// Validações básicas
+		if (!formData.codigo.trim()) {
+			Alert.alert('Erro', 'Código do cupom é obrigatório');
 			return;
 		}
 
-		Alert.alert(
-			'Cupom criado! 🎉',
-			`Cupom "${formData.nome}" foi criado com sucesso.\nCódigo: ${formData.codigo}`,
-			[
-				{ text: 'Criar outro', onPress: () => {
-					setFormData({
-						nome: '',
-						codigo: '',
-						tipo: 'percentual',
-						valor: '',
-						limiteUso: '',
-						dataValidade: '',
-						ativo: true
-					});
-				}},
-				{ text: 'Voltar', onPress: goBack }
-			]
-		);
+		if (formData.valor <= 0) {
+			Alert.alert('Erro', 'Valor do desconto deve ser maior que zero');
+			return;
+		}
+
+		if (!formData.data_expiracao) {
+			Alert.alert('Erro', 'Data de expiração é obrigatória');
+			return;
+		}
+
+		if (!validateDate(formData.data_expiracao)) {
+			Alert.alert('Erro', 'Data de expiração inválida. Use formato DD/MM/AAAA e certifique-se que não é uma data passada.');
+			return;
+		}
+
+		if (!formData.descricao.trim()) {
+			Alert.alert('Erro', 'Descrição é obrigatória');
+			return;
+		}
+
+		try {
+			setLoading(true);
+
+			// Remover campos opcionais se não preenchidos
+			const dataToSend = { ...formData };
+			if (!dataToSend.gasto_minimo) delete dataToSend.gasto_minimo;
+			if (!dataToSend.gasto_maximo) delete dataToSend.gasto_maximo;
+
+			// Converter data brasileira para formato da API
+			dataToSend.data_expiracao = convertBRToAPI(dataToSend.data_expiracao);
+
+			const result = await CouponService.criarCupom(dataToSend);
+
+			if (result.success) {
+				Alert.alert(
+					'Sucesso! 🎉',
+					'Cupom criado com sucesso!',
+					[
+						{
+							text: 'OK',
+							onPress: () => router.back()
+						}
+					]
+				);
+			} else {
+				Alert.alert('Erro', result.error || 'Erro ao criar cupom');
+			}
+		} catch (error) {
+			console.error('Erro ao criar cupom:', error);
+			Alert.alert('Erro', 'Erro interno. Tente novamente.');
+		} finally {
+			setLoading(false);
+		}
 	}
 
 	return (
@@ -68,130 +169,155 @@ export default function CriarCupomScreen() {
 					<View style={styles.placeholder} />
 				</View>
 
-				<Text style={[styles.title, { color: colors.text }]}>Criar Cupom</Text>
-
 				<ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-					<View style={styles.content}>
-						{/* Nome do cupom */}
-						<View style={styles.field}>
-							<Text style={[styles.label, { color: colors.text }]}>Nome do cupom *</Text>
+					{/* Título */}
+					<View style={styles.titleContainer}>
+						<Text style={[styles.title, { color: colors.text }]}>Criar Cupom</Text>
+						<Text style={[styles.subtitle, { color: colors.mutedText }]}>
+							Configure as regras e condições do cupom
+						</Text>
+					</View>
+
+					{/* Formulário */}
+					<View style={styles.form}>
+						{/* Código do Cupom */}
+						<View style={styles.inputGroup}>
+							<Text style={[styles.label, { color: colors.text }]}>Código do Cupom *</Text>
 							<TextInput
 								style={[styles.input, { backgroundColor: colors.inputBackground, color: colors.inputText, borderColor: colors.inputBorder }]}
-								placeholder="Ex: Desconto Black Friday"
+								value={formData.codigo}
+								onChangeText={(text) => updateForm('codigo', text)}
+								placeholder="Ex: DESCONTO50"
 								placeholderTextColor={colors.inputPlaceholder}
-								value={formData.nome}
-								onChangeText={(text) => setFormData(prev => ({ ...prev, nome: text }))}
+								autoCapitalize="characters"
 							/>
 						</View>
 
-						{/* Código */}
-						<View style={styles.field}>
-							<Text style={[styles.label, { color: colors.text }]}>Código do cupom *</Text>
-							<View style={styles.codeContainer}>
-								<TextInput
-									style={[styles.input, styles.codeInput, { backgroundColor: colors.inputBackground, color: colors.inputText, borderColor: colors.inputBorder }]}
-									placeholder="CODIGO123"
-									placeholderTextColor={colors.inputPlaceholder}
-									value={formData.codigo}
-									onChangeText={(text) => setFormData(prev => ({ ...prev, codigo: text.toUpperCase() }))}
-									autoCapitalize="characters"
-								/>
-								<TouchableOpacity onPress={generateCode} style={[styles.generateButton, { backgroundColor: colors.primary }]}>
-									<MaterialIcons name="refresh" size={20} color={colors.buttonTextOnPrimary} />
-								</TouchableOpacity>
-							</View>
-						</View>
-
-						{/* Tipo de desconto */}
-						<View style={styles.field}>
-							<Text style={[styles.label, { color: colors.text }]}>Tipo de desconto *</Text>
-							<View style={styles.toggleContainer}>
-								<TouchableOpacity 
+						{/* Tipo de Desconto */}
+						<View style={styles.inputGroup}>
+							<Text style={[styles.label, { color: colors.text }]}>Tipo de Desconto *</Text>
+							<View style={styles.radioGroup}>
+								<TouchableOpacity
 									style={[
-										styles.toggleOption, 
-										{ backgroundColor: formData.tipo === 'percentual' ? colors.primary : colors.card, borderColor: colors.cardBorder }
+										styles.radioButton,
+										{ borderColor: colors.primary },
+										formData.tipo_desconto === 'fixo' && { backgroundColor: colors.primary }
 									]}
-									onPress={() => setFormData(prev => ({ ...prev, tipo: 'percentual' }))}
+									onPress={() => updateForm('tipo_desconto', 'fixo')}
 								>
-									<Text style={[styles.toggleText, { color: formData.tipo === 'percentual' ? colors.buttonTextOnPrimary : colors.cardText }]}>
+									<Text style={[
+										styles.radioText,
+										{ color: formData.tipo_desconto === 'fixo' ? colors.buttonTextOnPrimary : colors.text }
+									]}>
+										Fixo (R$)
+									</Text>
+								</TouchableOpacity>
+								<TouchableOpacity
+									style={[
+										styles.radioButton,
+										{ borderColor: colors.primary },
+										formData.tipo_desconto === 'percentual' && { backgroundColor: colors.primary }
+									]}
+									onPress={() => updateForm('tipo_desconto', 'percentual')}
+								>
+									<Text style={[
+										styles.radioText,
+										{ color: formData.tipo_desconto === 'percentual' ? colors.buttonTextOnPrimary : colors.text }
+									]}>
 										Percentual (%)
 									</Text>
 								</TouchableOpacity>
-								<TouchableOpacity 
-									style={[
-										styles.toggleOption, 
-										{ backgroundColor: formData.tipo === 'fixo' ? colors.primary : colors.card, borderColor: colors.cardBorder }
-									]}
-									onPress={() => setFormData(prev => ({ ...prev, tipo: 'fixo' }))}
-								>
-									<Text style={[styles.toggleText, { color: formData.tipo === 'fixo' ? colors.buttonTextOnPrimary : colors.cardText }]}>
-										Valor fixo (R$)
-									</Text>
-								</TouchableOpacity>
 							</View>
 						</View>
 
-						{/* Valor */}
-						<View style={styles.field}>
+						{/* Valor do Desconto */}
+						<View style={styles.inputGroup}>
 							<Text style={[styles.label, { color: colors.text }]}>
-								Valor do desconto * {formData.tipo === 'percentual' ? '(%)' : '(R$)'}
+								Valor do Desconto * ({formData.tipo_desconto === 'fixo' ? 'R$' : '%'})
 							</Text>
 							<TextInput
 								style={[styles.input, { backgroundColor: colors.inputBackground, color: colors.inputText, borderColor: colors.inputBorder }]}
-								placeholder={formData.tipo === 'percentual' ? 'Ex: 15' : 'Ex: 25.00'}
+								value={formData.valor.toString()}
+								onChangeText={(text) => updateForm('valor', parseFloat(text) || 0)}
+								placeholder={formData.tipo_desconto === 'fixo' ? '0.00' : '0'}
 								placeholderTextColor={colors.inputPlaceholder}
-								value={formData.valor}
-								onChangeText={(text) => setFormData(prev => ({ ...prev, valor: text }))}
 								keyboardType="numeric"
 							/>
 						</View>
 
-						{/* Limite de uso */}
-						<View style={styles.field}>
-							<Text style={[styles.label, { color: colors.text }]}>Limite de uso</Text>
+						{/* Data de Expiração */}
+						<View style={styles.inputGroup}>
+							<Text style={[styles.label, { color: colors.text }]}>Data de Expiração *</Text>
+							<TextInput
+								style={[
+									styles.input,
+									{ backgroundColor: colors.inputBackground, color: colors.inputText, borderColor: colors.inputBorder },
+									formData.data_expiracao && !validateDate(formData.data_expiracao) && { borderColor: '#EF4444' }
+								]}
+								value={formData.data_expiracao}
+								onChangeText={(text) => {
+									const formatted = formatDateInput(text);
+									updateForm('data_expiracao', formatted);
+								}}
+								placeholder="DD/MM/AAAA"
+								placeholderTextColor={colors.inputPlaceholder}
+								keyboardType="numeric"
+								maxLength={10}
+							/>
+							{formData.data_expiracao && !validateDate(formData.data_expiracao) && (
+								<Text style={[styles.errorText, { color: '#EF4444' }]}>
+									Data inválida ou no passado. Use formato DD/MM/AAAA
+								</Text>
+							)}
+						</View>
+
+						{/* Descrição */}
+						<View style={styles.inputGroup}>
+							<Text style={[styles.label, { color: colors.text }]}>Descrição *</Text>
 							<TextInput
 								style={[styles.input, { backgroundColor: colors.inputBackground, color: colors.inputText, borderColor: colors.inputBorder }]}
-								placeholder="Ex: 100 (deixe vazio para ilimitado)"
+								value={formData.descricao}
+								onChangeText={(text) => updateForm('descricao', text)}
+								placeholder="Descreva o cupom..."
 								placeholderTextColor={colors.inputPlaceholder}
-								value={formData.limiteUso}
-								onChangeText={(text) => setFormData(prev => ({ ...prev, limiteUso: text }))}
+								multiline
+								numberOfLines={3}
+							/>
+						</View>
+
+						{/* Limite de Uso por Cupom */}
+						<View style={styles.inputGroup}>
+							<Text style={[styles.label, { color: colors.text }]}>Limite de Uso por Cupom</Text>
+							<TextInput
+								style={[styles.input, { backgroundColor: colors.inputBackground, color: colors.inputText, borderColor: colors.inputBorder }]}
+								value={formData.limite_uso_por_cupom.toString()}
+								onChangeText={(text) => updateForm('limite_uso_por_cupom', parseInt(text) || 1)}
+								placeholder="1"
+								placeholderTextColor={colors.inputPlaceholder}
 								keyboardType="numeric"
 							/>
 						</View>
 
-						{/* Data de validade */}
-						<View style={styles.field}>
-							<Text style={[styles.label, { color: colors.text }]}>Data de validade</Text>
+						{/* Limite de Uso por Cliente */}
+						<View style={styles.inputGroup}>
+							<Text style={[styles.label, { color: colors.text }]}>Limite de Uso por Cliente</Text>
 							<TextInput
 								style={[styles.input, { backgroundColor: colors.inputBackground, color: colors.inputText, borderColor: colors.inputBorder }]}
-								placeholder="DD/MM/AAAA (deixe vazio para sem validade)"
+								value={formData.limite_uso_por_cliente.toString()}
+								onChangeText={(text) => updateForm('limite_uso_por_cliente', parseInt(text) || 1)}
+								placeholder="1"
 								placeholderTextColor={colors.inputPlaceholder}
-								value={formData.dataValidade}
-								onChangeText={(text) => setFormData(prev => ({ ...prev, dataValidade: text }))}
+								keyboardType="numeric"
 							/>
 						</View>
 
-						{/* Preview do cupom */}
-						<View style={[styles.previewCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
-							<Text style={[styles.previewTitle, { color: colors.cardText }]}>Preview do Cupom</Text>
-							<View style={styles.previewContent}>
-								<Text style={[styles.previewName, { color: colors.cardText }]}>
-									{formData.nome || 'Nome do cupom'}
-								</Text>
-								<Text style={[styles.previewCode, { color: colors.primary }]}>
-									{formData.codigo || 'CODIGO123'}
-								</Text>
-								<Text style={[styles.previewDiscount, { color: colors.cardText }]}>
-									{formData.valor ? 
-										(formData.tipo === 'percentual' ? `${formData.valor}% OFF` : `R$ ${formData.valor} OFF`) 
-										: 'Valor do desconto'
-									}
-								</Text>
-							</View>
-						</View>
-
-						<PrimaryButton onPress={handleSave} style={styles.saveButton}>
-							Criar Cupom
+						{/* Botão de Envio */}
+						<PrimaryButton
+							onPress={handleSubmit}
+							loading={loading}
+							style={styles.submitButton}
+						>
+							{loading ? 'Criando...' : 'Criar Cupom'}
 						</PrimaryButton>
 					</View>
 				</ScrollView>
@@ -222,20 +348,26 @@ const styles = StyleSheet.create({
 	placeholder: {
 		width: 40
 	},
-	title: {
-		fontSize: 22,
-		fontWeight: '700',
-		marginBottom: 24,
-		textAlign: 'center'
-	},
 	scrollView: {
 		flex: 1
 	},
-	content: {
-		paddingBottom: 32,
+	titleContainer: {
+		alignItems: 'center',
+		marginBottom: 32
+	},
+	title: {
+		fontSize: 24,
+		fontWeight: '700',
+		marginBottom: 8
+	},
+	subtitle: {
+		fontSize: 16,
+		textAlign: 'center'
+	},
+	form: {
 		gap: 20
 	},
-	field: {
+	inputGroup: {
 		gap: 8
 	},
 	label: {
@@ -243,72 +375,33 @@ const styles = StyleSheet.create({
 		fontWeight: '600'
 	},
 	input: {
+		padding: 16,
 		borderRadius: 12,
 		borderWidth: 1,
-		paddingHorizontal: 16,
-		paddingVertical: 14,
 		fontSize: 16
 	},
-	codeContainer: {
+	radioGroup: {
 		flexDirection: 'row',
 		gap: 12
 	},
-	codeInput: {
-		flex: 1
-	},
-	generateButton: {
-		width: 48,
-		height: 48,
+	radioButton: {
+		flex: 1,
+		padding: 16,
 		borderRadius: 12,
+		borderWidth: 2,
 		alignItems: 'center',
 		justifyContent: 'center'
 	},
-	toggleContainer: {
-		flexDirection: 'row',
-		gap: 12
-	},
-	toggleOption: {
-		flex: 1,
-		paddingVertical: 14,
-		paddingHorizontal: 16,
-		borderRadius: 12,
-		borderWidth: 1,
-		alignItems: 'center'
-	},
-	toggleText: {
+	radioText: {
 		fontSize: 14,
 		fontWeight: '600'
 	},
-	previewCard: {
-		padding: 20,
-		borderRadius: 16,
-		borderWidth: 1,
-		marginTop: 12
+	submitButton: {
+		marginTop: 20,
+		paddingVertical: 16
 	},
-	previewTitle: {
-		fontSize: 16,
-		fontWeight: '700',
-		marginBottom: 16,
-		textAlign: 'center'
-	},
-	previewContent: {
-		alignItems: 'center',
-		gap: 8
-	},
-	previewName: {
-		fontSize: 18,
-		fontWeight: '600'
-	},
-	previewCode: {
-		fontSize: 20,
-		fontWeight: '800',
-		letterSpacing: 2
-	},
-	previewDiscount: {
-		fontSize: 16,
-		fontWeight: '600'
-	},
-	saveButton: {
-		marginTop: 20
+	errorText: {
+		fontSize: 12,
+		marginTop: 4
 	}
 }); 
